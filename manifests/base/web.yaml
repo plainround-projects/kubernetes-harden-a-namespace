@@ -24,6 +24,10 @@ spec:
         app.kubernetes.io/part-of: tenant
     spec:
       serviceAccountName: web
+      # Kubernetes injects an environment variable for every Service in the namespace (the Service db would
+      # set DB_PORT=tcp://10.43.0.1:5432, which is the name this app reads its port from). The app finds the
+      # database through DNS, so the injection is switched off.
+      enableServiceLinks: false
       securityContext:
         runAsNonRoot: true
         runAsUser: 10001

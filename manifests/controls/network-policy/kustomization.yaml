@@ -1,5 +1,6 @@
 # Control 3, NetworkPolicy: deny all traffic in both directions, then allow only DNS, web to its own
-# database, and the database's acceptance of exactly that. Needs a network plugin that enforces policy (Calico).
+# database, and the database's acceptance of exactly that. Needs a cluster whose network layer enforces
+# policy (k3s does). The kubelet's health probes still reach the pods: k3s lets traffic from its own node through.
 apiVersion: kustomize.config.k8s.io/v1alpha1
 kind: Component
 labels:
