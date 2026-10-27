@@ -1,0 +1,95 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kubernetes-harden-a-namespace"
+version = "0.1.0"
+description = "Two team namespaces on a local Calico cluster, hardened with RBAC, Pod Security, NetworkPolicy, quotas and a CEL admission policy, each control proved by an attack that must fail."
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+authors = [{ name = "Sumit Srivastava" }]
+dependencies = [
+    "flask>=3.1,<4",
+    "gunicorn>=23,<26",
+    "psycopg[binary]>=3.2,<4",
+    "psycopg-pool>=3.2,<4",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8,<10",
+    "pytest-cov>=5",
+    "ruff>=0.6",
+    "mypy>=1.11",
+    "import-linter>=2.0",
+    "pip-audit>=2.7",
+    "pyyaml>=6",
+    "types-PyYAML",
+    "yamllint>=1.35",
+    "shellcheck-py>=0.10",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "N", "C4", "RUF", "PT", "D100", "D101", "D103", "D104"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["D"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["src", "tests"]
+
+# Test functions are named for the behavior they check; annotating every one adds noise, not safety.
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+disallow_untyped_calls = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+markers = [
+    "integration: needs Docker to run a real Postgres (make test-integration)",
+    "policy: renders the manifests with kubectl and checks them, no cluster needed",
+    "e2e: needs the local cluster from make up (make smoke)",
+]
+
+[tool.coverage.run]
+source = ["tenant_web"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+
+[tool.importlinter]
+root_package = "tenant_web"
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "Layers: interfaces -> infrastructure -> application -> domain, never upward"
+type = "layers"
+layers = [
+    "tenant_web.interfaces",
+    "tenant_web.infrastructure",
+    "tenant_web.application",
+    "tenant_web.domain",
+]
+
+[[tool.importlinter.contracts]]
+name = "Domain and application know nothing about Postgres or Flask"
+type = "forbidden"
+source_modules = ["tenant_web.domain", "tenant_web.application"]
+forbidden_modules = ["psycopg", "psycopg_pool", "flask"]

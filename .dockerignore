@@ -1,0 +1,17 @@
+.venv
+.bin
+.kube
+.git
+.github
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.coverage
+.kubeconform-cache
+tests
+manifests
+cluster
+scripts
+docs
+**/__pycache__
+*.egg-info

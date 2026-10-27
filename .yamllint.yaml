@@ -1,0 +1,15 @@
+extends: default
+ignore: |
+  .venv/
+  .bin/
+  .kube/
+rules:
+  line-length:
+    max: 140
+  document-start: disable
+  truthy:
+    check-keys: false
+  comments:
+    min-spaces-from-content: 1
+  braces:
+    max-spaces-inside: 1
