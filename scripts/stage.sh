@@ -64,6 +64,6 @@ reset_controls
 # where a client-side apply would believe nothing had changed.
 render "$source_dir" | kubectl apply --server-side --force-conflicts -f - >/dev/null
 for team in "${team_list[@]}"; do
-  kubectl -n "$team" rollout status deployment/db --timeout=300s
-  kubectl -n "$team" rollout status deployment/web --timeout=300s
+  kubectl -n "$team" rollout status deployment/db --timeout=600s
+  kubectl -n "$team" rollout status deployment/web --timeout=600s
 done

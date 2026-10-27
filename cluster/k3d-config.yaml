@@ -1,0 +1,43 @@
+# One node: a k3s server that also runs the pods, in one Docker container. k3s is a certified Kubernetes
+# distribution in a single binary (Kubernetes 1.35.8, k3s v1.35.8-k3s1).
+#
+# Network policy: k3s ships an embedded network policy controller (kube-router's) next to its flannel
+# network, so NetworkPolicy objects are enforced. That is the property the lesson needs from the cluster.
+# kind's default network plugin (kindnet), and flannel without that controller, accept NetworkPolicy objects
+# and enforce nothing; to see the lesson's first common mistake, add `--disable-network-policy` below.
+#
+# Traefik and the service load balancer are switched off: nothing here needs an ingress. There is no k3d
+# load balancer either, so the API server's port is published on the node itself (a random free port).
+# Disk thresholds: the kubelet normally refuses to schedule pods (a disk-pressure taint) and deletes unused
+# images once the disk is 85% full. Docker Desktop's disk is shared with every image and volume on the
+# machine and is often fuller than that, so a local cluster that obeyed the defaults would sit Pending, or lose the
+# images just imported into it. Both limits are relaxed here; a real node keeps the defaults.
+apiVersion: k3d.io/v1alpha5
+kind: Simple
+metadata:
+  name: harden
+servers: 1
+agents: 0
+image: rancher/k3s:v1.35.8-k3s1
+options:
+  k3d:
+    wait: true
+    timeout: 15m0s
+    disableLoadbalancer: true
+  k3s:
+    extraArgs:
+      - arg: --kubelet-arg=eviction-hard=nodefs.available<1%,imagefs.available<1%,nodefs.inodesFree<1%
+        nodeFilters:
+          - all
+      - arg: --kubelet-arg=image-gc-high-threshold=100
+        nodeFilters:
+          - all
+      - arg: --kubelet-arg=image-gc-low-threshold=99
+        nodeFilters:
+          - all
+      - arg: --disable=traefik
+        nodeFilters:
+          - server:*
+      - arg: --disable=servicelb
+        nodeFilters:
+          - server:*

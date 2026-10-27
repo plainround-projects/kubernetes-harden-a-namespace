@@ -13,7 +13,7 @@ for team in "${team_list[@]}"; do
     log "secret db-credentials already exists in $team"
     continue
   fi
-  password="$(LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c 24)"
+  password="$(openssl rand -hex 16)"
   kubectl -n "$team" create secret generic db-credentials --from-literal=password="$password" >/dev/null
   log "created secret db-credentials in $team"
 done

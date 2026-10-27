@@ -25,10 +25,10 @@ $(STAMP): requirements-dev.lock pyproject.toml
 
 install: $(STAMP) ## create .venv from the lock file
 
-tools: ## download the pinned kind and kubeconform into .bin (checksum-verified)
+tools: ## download the pinned k3d and kubeconform into .bin (checksum-verified)
 	scripts/tools.sh
 
-up: tools ## create the kind cluster with Calico, build and load the images, deploy both teams hardened
+up: tools ## create the k3d cluster, build and import the images, deploy both teams hardened
 	scripts/cluster-start.sh
 	scripts/build-images.sh
 	scripts/stage.sh hardened
@@ -98,7 +98,7 @@ check: lint test ## lint plus unit and policy tests
 docker-build: ## build the web image without loading it anywhere
 	docker build -t registry.example.test/platform/tenant-web:0.1.0 .
 
-down: ## delete the kind cluster and its kubeconfig
+down: ## delete the k3d cluster and its kubeconfig
 	scripts/cluster-down.sh
 
 clean: down

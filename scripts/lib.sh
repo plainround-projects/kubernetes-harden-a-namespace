@@ -10,8 +10,8 @@ REGISTRY="${REGISTRY:-registry.example.test/platform}"
 WEB_IMAGE="$REGISTRY/tenant-web:0.1.0"
 DB_IMAGE="$REGISTRY/postgres:17-alpine"
 PAUSE_IMAGE="$REGISTRY/pause:3.10"
-KIND="$ROOT/.bin/kind"
-export ROOT CLUSTER_NAME TEAMS REGISTRY WEB_IMAGE DB_IMAGE PAUSE_IMAGE KIND
+K3D="$ROOT/.bin/k3d"
+export ROOT CLUSTER_NAME TEAMS REGISTRY WEB_IMAGE DB_IMAGE PAUSE_IMAGE K3D
 # A kubeconfig of its own: this project never reads or changes ~/.kube/config.
 export KUBECONFIG="${KUBECONFIG:-$ROOT/.kube/config}"
 
