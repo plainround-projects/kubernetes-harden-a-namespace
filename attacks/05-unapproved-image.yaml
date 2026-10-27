@@ -1,0 +1,25 @@
+# Attack 5: an image from a registry that is not on the allow-list. The pod is compliant otherwise, so only
+# the admission policy can stop it.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: outsider
+  labels:
+    attack: "05"
+spec:
+  automountServiceAccountToken: false
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65534
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - name: outsider
+      image: untrusted.example.test/tools/shell:1.0
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: ["ALL"]
+      resources:
+        requests: { cpu: 10m, memory: 16Mi }
+        limits: { cpu: 50m, memory: 32Mi }

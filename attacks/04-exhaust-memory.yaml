@@ -1,0 +1,35 @@
+# Attack 4: fifty replicas asking for 1 GiB each. The Deployment itself is valid; what the namespace quota
+# stops is the ReplicaSet creating the pods past the cap. The pods are fully compliant otherwise (restricted
+# settings, approved image, limits set), so only the quota can hold this back.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hog
+  labels:
+    attack: "04"
+spec:
+  replicas: 50
+  selector:
+    matchLabels:
+      attack: "04"
+  template:
+    metadata:
+      labels:
+        attack: "04"
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: hog
+          image: registry.example.test/platform/pause:3.10
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests: { cpu: 5m, memory: 1Gi }
+            limits: { cpu: 10m, memory: 1Gi }

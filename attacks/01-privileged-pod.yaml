@@ -1,0 +1,17 @@
+# Attack 1: a careless or malicious tenant runs a privileged pod, which would hand it the node.
+# Everything else about this pod is acceptable (approved image, limits set), so only Pod Security can stop it.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: evil
+  labels:
+    attack: "01"
+spec:
+  containers:
+    - name: evil
+      image: registry.example.test/platform/pause:3.10
+      securityContext:
+        privileged: true
+      resources:
+        requests: { cpu: 10m, memory: 16Mi }
+        limits: { cpu: 50m, memory: 32Mi }

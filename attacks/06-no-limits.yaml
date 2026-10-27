@@ -1,0 +1,24 @@
+# Attack 6: a container that names requests but no limits, so it may use all the memory of its node. The pod
+# is compliant otherwise, so only the admission policy's second rule can stop it.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: unbounded
+  labels:
+    attack: "06"
+spec:
+  automountServiceAccountToken: false
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65534
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - name: unbounded
+      image: registry.example.test/platform/pause:3.10
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: ["ALL"]
+      resources:
+        requests: { cpu: 10m, memory: 16Mi }
