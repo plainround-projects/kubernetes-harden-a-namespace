@@ -1,0 +1,11 @@
+# Control 4, quota and defaults: a ceiling on what the namespace can ask for in total, and defaults so a
+# container that names no requests still counts against it.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+labels:
+  - pairs:
+      platform.example/control: quota
+    includeSelectors: false
+resources:
+  - resourcequota.yaml
+  - limitrange.yaml

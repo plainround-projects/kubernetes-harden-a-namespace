@@ -1,0 +1,24 @@
+# Control 1, RBAC: the team's people get a Role in their own namespace and nothing anywhere else; no
+# workload gets API permissions or a mounted token. The group name is set per team by manifests/identity.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+labels:
+  - pairs:
+      platform.example/control: rbac
+    includeSelectors: false
+resources:
+  - role.yaml
+  - rolebinding.yaml
+patches:
+  - target:
+      kind: ServiceAccount
+    patch: |-
+      - op: add
+        path: /automountServiceAccountToken
+        value: false
+  - target:
+      kind: Deployment
+    patch: |-
+      - op: add
+        path: /spec/template/spec/automountServiceAccountToken
+        value: false

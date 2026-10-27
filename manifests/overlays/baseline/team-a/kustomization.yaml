@@ -1,0 +1,9 @@
+# Team a, the baseline: workloads and the careless convenience binding, none of the five controls.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: team-a
+resources:
+  - ../../../base
+components:
+  - ../../../controls/careless-rbac
+  - ../../../identity/team-a

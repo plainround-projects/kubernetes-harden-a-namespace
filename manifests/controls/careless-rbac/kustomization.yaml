@@ -1,0 +1,11 @@
+# The shortcut the lesson warns about, used only by the baseline: the team's people and its web account are
+# bound to the built-in edit ClusterRole for every namespace "just for convenience". It defeats the isolation
+# however careful every other binding is, which attack 02 shows. The name is set per team by manifests/identity.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+labels:
+  - pairs:
+      platform.example/control: careless-rbac
+    includeSelectors: false
+resources:
+  - clusterrolebinding.yaml

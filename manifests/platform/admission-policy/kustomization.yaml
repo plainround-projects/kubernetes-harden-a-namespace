@@ -1,0 +1,10 @@
+# Control 5, admission policy in CEL, cluster-wide and bound to the namespaces that carry the tenant label.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - policy.yaml
+  - binding.yaml
+labels:
+  - pairs:
+      platform.example/control: admission-policy
+    includeSelectors: false

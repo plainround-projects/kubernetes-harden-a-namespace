@@ -1,0 +1,29 @@
+# Who this team is: its people's group, its service name, and the names of its cluster-scoped objects.
+# Listed last among a team's components, so the objects it patches already exist.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  - target:
+      kind: RoleBinding
+      name: developers
+    patch: |-
+      - op: replace
+        path: /subjects/0/name
+        value: team-b-humans
+  - target:
+      kind: ClusterRoleBinding
+      name: convenience
+    patch: |-
+      - op: replace
+        path: /metadata/name
+        value: team-b-convenience
+      - op: replace
+        path: /subjects/0/name
+        value: team-b-humans
+  - target:
+      kind: Deployment
+      name: web
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/env/0/value
+        value: team-b

@@ -1,0 +1,15 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: convenience
+subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: PLACEHOLDER-set-by-identity
+  - kind: ServiceAccount
+    name: web
+    namespace: placeholder
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: edit

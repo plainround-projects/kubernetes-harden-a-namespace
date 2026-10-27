@@ -1,0 +1,13 @@
+# One control-plane node and one worker. The default network plugin (kindnet) is switched off because it
+# ignores NetworkPolicy objects without saying so; Calico is installed instead by scripts/cluster-start.sh.
+# The pod subnet is the one Calico's manifest expects. The node image is pinned by digest: Kubernetes 1.35.8.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+networking:
+  disableDefaultCNI: true
+  podSubnet: 192.168.0.0/16
+nodes:
+  - role: control-plane
+    image: kindest/node:v1.35.8@sha256:07b2536e30b803ed61d1677a79df6115f798ce64c80f9e22f6ed45afd09323c0
+  - role: worker
+    image: kindest/node:v1.35.8@sha256:07b2536e30b803ed61d1677a79df6115f798ce64c80f9e22f6ed45afd09323c0

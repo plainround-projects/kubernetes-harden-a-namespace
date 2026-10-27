@@ -1,0 +1,9 @@
+# Both directions, every pod. A default-deny for ingress only would leave every pod free to start
+# connections to anywhere, including the other team's database.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+spec:
+  podSelector: {}
+  policyTypes: [Ingress, Egress]

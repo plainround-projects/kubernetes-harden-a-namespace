@@ -1,0 +1,13 @@
+# Only requests are capped. A quota on limits would reject a pod with no limits at the quota step, before
+# the admission policy (control 5) could refuse it with its own message.
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: team-quota
+spec:
+  hard:
+    pods: "20"
+    requests.cpu: "2"
+    requests.memory: 4Gi
+    count/deployments.apps: "10"
+    count/secrets: "20"

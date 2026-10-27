@@ -1,0 +1,7 @@
+# Both teams with every control, plus the cluster-wide admission policy. Every attack in attacks/ is blocked.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - team-a
+  - team-b
+  - ../../platform/admission-policy

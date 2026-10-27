@@ -1,0 +1,12 @@
+# Defaults for what a container asks for when it says nothing, so it is counted by the quota. Limits get no
+# default on purpose: the admission policy requires every container to state its own.
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: team-defaults
+spec:
+  limits:
+    - type: Container
+      defaultRequest:
+        cpu: 50m
+        memory: 64Mi

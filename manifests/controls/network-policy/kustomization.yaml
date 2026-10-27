@@ -1,0 +1,12 @@
+# Control 3, NetworkPolicy: deny all traffic in both directions, then allow only DNS, web to its own
+# database, and the database's acceptance of exactly that. Needs a network plugin that enforces policy (Calico).
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+labels:
+  - pairs:
+      platform.example/control: network-policy
+    includeSelectors: false
+resources:
+  - default-deny.yaml
+  - allow-dns.yaml
+  - web-to-db.yaml

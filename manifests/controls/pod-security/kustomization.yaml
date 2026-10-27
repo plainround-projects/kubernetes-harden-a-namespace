@@ -1,0 +1,25 @@
+# Control 2, Pod Security admission: the namespace enforces the restricted standard, so a privileged pod or
+# a pod running as root is refused at admission with the rule named. Warn and audit are set too, so a
+# manifest that would be refused is flagged by kubectl before it is applied.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+labels:
+  - pairs:
+      platform.example/control: pod-security
+    includeSelectors: false
+patches:
+  - target:
+      kind: Namespace
+    patch: |-
+      - op: add
+        path: /metadata/labels/pod-security.kubernetes.io~1enforce
+        value: restricted
+      - op: add
+        path: /metadata/labels/pod-security.kubernetes.io~1enforce-version
+        value: latest
+      - op: add
+        path: /metadata/labels/pod-security.kubernetes.io~1warn
+        value: restricted
+      - op: add
+        path: /metadata/labels/pod-security.kubernetes.io~1audit
+        value: restricted

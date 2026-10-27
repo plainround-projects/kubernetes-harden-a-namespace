@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# The namespace is set by each team's overlay. Everything here is the same for both teams.
+resources:
+  - namespace.yaml
+  - serviceaccounts.yaml
+  - db.yaml
+  - web.yaml
+configMapGenerator:
+  - name: db-init
+    files:
+      - ../../sql/001_schema.sql
+      - ../../sql/002_seed.sql

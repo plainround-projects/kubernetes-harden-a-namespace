@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tenant
+  labels:
+    app.kubernetes.io/part-of: tenant
+    # The admission policy applies to namespaces that carry this label.
+    platform.example/tenant: "true"

@@ -1,0 +1,12 @@
+# Team b, hardened: RBAC, Pod Security, NetworkPolicy and quota (the admission policy is cluster-wide, in platform/).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: team-b
+resources:
+  - ../../../base
+components:
+  - ../../../controls/rbac
+  - ../../../controls/pod-security
+  - ../../../controls/network-policy
+  - ../../../controls/quota
+  - ../../../identity/team-b
