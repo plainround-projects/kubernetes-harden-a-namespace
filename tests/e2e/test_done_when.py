@@ -1,4 +1,4 @@
-"""The lesson's Done when lines against the two-node Calico cluster (make up first).
+"""The lesson's Done when lines against the one-node Calico cluster (make up first).
 
 The cluster is put into a stage with scripts/stage.sh and the attacks are run with scripts/run-attacks.sh,
 exactly as a reader would. Besides "every attack is blocked when every control is on", the tests show the other
@@ -87,7 +87,9 @@ def test_done_when_2_rbac_gives_team_a_nothing_in_team_b_and_pods_have_no_token(
     stage(kube, "hardened")
     listing = kubectl_as_engineer(kube, "auth", "can-i", "--list", "-n", "team-b").stdout
     print(listing)
-    resources = [line.split()[0] for line in listing.splitlines()[1:] if line.strip() and not line.startswith("/")]
+    resources = [
+        line.split()[0] for line in listing.splitlines()[1:] if line.strip() and not line.split()[0].startswith("[")
+    ]
     assert all(name.startswith("selfsubject") for name in resources), (
         f"team A can do more in team B than ask who it is: {resources}"
     )

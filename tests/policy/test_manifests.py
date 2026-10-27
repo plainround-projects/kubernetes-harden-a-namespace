@@ -41,6 +41,7 @@ def test_every_workload_would_pass_its_own_admission_policy_and_pod_security(har
         assert pod["securityContext"]["runAsNonRoot"] is True
         assert pod["securityContext"]["seccompProfile"] == {"type": "RuntimeDefault"}
         assert pod["automountServiceAccountToken"] is False
+        assert pod["enableServiceLinks"] is False, "a Service called db would otherwise set DB_PORT to a URL"
         for container in pod["containers"]:
             assert container["image"].startswith(APPROVED), container["image"]
             assert "memory" in container["resources"]["limits"]
@@ -80,6 +81,9 @@ def test_the_hardened_overlay_has_no_clusterrolebinding_and_the_baseline_has_the
     careless = select(baseline, "ClusterRoleBinding")
     assert sorted(binding["metadata"]["name"] for binding in careless) == ["team-a-convenience", "team-b-convenience"]
     assert all(binding["roleRef"]["name"] == "edit" for binding in careless)
+    for team in TEAMS:
+        (binding,) = select(baseline, "ClusterRoleBinding", name=f"{team}-convenience")
+        assert {"kind": "ServiceAccount", "name": "web", "namespace": team} in binding["subjects"]
 
 
 @pytest.mark.parametrize("team", TEAMS)

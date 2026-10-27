@@ -16,6 +16,24 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 Json = dict[str, Any]
+ATTEMPTS = 120
+RETRY_SECONDS = 8
+SCRIPT_ATTEMPTS = 60
+TRANSIENT = (
+    "Unable to connect to the server",
+    "TLS handshake timeout",
+    "i/o timeout",
+    "connection refused",
+    "context deadline exceeded",
+    "the server was unable to return a response",
+    "etcdserver: request timed out",
+    "net/http: request canceled",
+)
+
+
+def _transient(stderr: str) -> bool:
+    """True when kubectl failed because the API server did not answer, as opposed to a real error."""
+    return any(marker in stderr for marker in TRANSIENT)
 
 
 class Kube:
@@ -26,29 +44,53 @@ class Kube:
         self.env = {**os.environ, "KUBECONFIG": os.environ.get("KUBECONFIG", str(ROOT / ".kube" / "config"))}
 
     def run(self, *args: str, check: bool = True, timeout: float = 120) -> subprocess.CompletedProcess[str]:
-        """Run kubectl in the namespace and return the finished process."""
-        return subprocess.run(
-            ["kubectl", "-n", self.namespace, *args],
-            env=self.env,
-            capture_output=True,
-            text=True,
-            check=check,
-            timeout=timeout,
-        )
+        """Run kubectl in the namespace and return the finished process.
+
+        A kubectl call that fails because the API server did not answer (a busy machine makes that happen) is
+        retried for a few minutes; any other failure is returned or raised at once.
+        """
+        for attempt in range(1, ATTEMPTS + 1):
+            try:
+                result = subprocess.run(
+                    ["kubectl", "-n", self.namespace, *args],
+                    env=self.env,
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                    timeout=timeout,
+                )
+            except subprocess.TimeoutExpired:
+                if attempt == ATTEMPTS:
+                    raise
+                continue
+            if result.returncode == 0 or not _transient(result.stderr) or attempt == ATTEMPTS:
+                if check:
+                    result.check_returncode()
+                return result
+            time.sleep(RETRY_SECONDS)
+        raise AssertionError("unreachable")
 
     def script(self, name: str, *args: str, timeout: float = 600) -> str:
-        """Run one of the project's scripts and return its output; raise with the output if it fails."""
-        result = subprocess.run(
-            [str(ROOT / "scripts" / name), *args],
-            env=self.env,
-            capture_output=True,
-            text=True,
-            check=False,
-            timeout=timeout,
-        )
-        if result.returncode != 0:
-            raise AssertionError(f"scripts/{name} failed:\n{result.stdout}\n{result.stderr}")
-        return result.stdout
+        """Run one of the project's scripts and return its output; raise with the output if it fails.
+
+        A script that stops because the cluster did not answer is run again, for up to half an hour.
+        """
+        for attempt in range(1, SCRIPT_ATTEMPTS + 1):
+            result = subprocess.run(
+                [str(ROOT / "scripts" / name), *args],
+                env=self.env,
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=timeout,
+            )
+            unreachable = "no cluster reachable" in result.stderr or _transient(result.stderr)
+            if result.returncode == 0:
+                return result.stdout
+            if not unreachable or attempt == SCRIPT_ATTEMPTS:
+                raise AssertionError(f"scripts/{name} failed:\n{result.stdout}\n{result.stderr}")
+            time.sleep(30)
+        raise AssertionError("unreachable")
 
     def get(self, *args: str) -> Json:
         """kubectl get ... -o json, parsed."""
