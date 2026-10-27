@@ -6,7 +6,8 @@
 # kind's default network plugin (kindnet), and flannel without that controller, accept NetworkPolicy objects
 # and enforce nothing; to see the lesson's first common mistake, add `--disable-network-policy` below.
 #
-# Traefik and the service load balancer are switched off: nothing here needs an ingress. There is no k3d
+# Traefik, the service load balancer, metrics-server, local storage and the Helm controller are switched off:
+# nothing here needs them, and each is one less thing writing to the cluster's database on a busy machine. There is no k3d
 # load balancer either, so the API server's port is published on the node itself (a random free port).
 # Disk thresholds: the kubelet normally refuses to schedule pods (a disk-pressure taint) and deletes unused
 # images once the disk is 85% full. Docker Desktop's disk is shared with every image and volume on the
@@ -39,5 +40,14 @@ options:
         nodeFilters:
           - server:*
       - arg: --disable=servicelb
+        nodeFilters:
+          - server:*
+      - arg: --disable=metrics-server
+        nodeFilters:
+          - server:*
+      - arg: --disable=local-storage
+        nodeFilters:
+          - server:*
+      - arg: --disable-helm-controller
         nodeFilters:
           - server:*
