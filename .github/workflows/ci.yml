@@ -1,0 +1,46 @@
+name: ci
+
+on: [push, pull_request]
+
+jobs:
+  check:
+    name: Lint (ruff, mypy, import rules, yamllint, shellcheck, hadolint, kubeconform), unit and policy tests, audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: make lint
+      - run: make test
+      - run: make audit
+
+  integration:
+    name: Postgres adapter, SQL scripts and the real gunicorn command against a Postgres container
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: make test-integration
+
+  cluster:
+    name: Every control proved by its attack, on a k3d cluster
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: make up
+      - run: make run
+      - run: make smoke
+      - if: failure()
+        run: |
+          export KUBECONFIG="$PWD/.kube/config"
+          kubectl get pods -A -o wide || true
+          kubectl get events -A --sort-by=.lastTimestamp | tail -50 || true
+      - if: always()
+        run: make down
