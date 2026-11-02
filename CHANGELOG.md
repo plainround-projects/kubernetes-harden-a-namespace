@@ -6,7 +6,9 @@ All notable changes to this project are recorded here. The format follows [Keep 
 
 ### Added
 
-- Two team namespaces on a kind cluster with Calico, each running a small web service (Python, Flask, gunicorn) and a Postgres database, with the schema, seed and queries as numbered SQL files.
+- Two team namespaces on a k3d (k3s) cluster, whose bundled policy controller enforces NetworkPolicy, each running a small web service (Python, Flask, gunicorn) and a Postgres database, with the schema, seed and queries as numbered SQL files.
 - Five controls as Kustomize components: RBAC with no mounted tokens, the `restricted` Pod Security standard, default-deny NetworkPolicy with DNS and web-to-database allowed, a ResourceQuota with a LimitRange, and a CEL ValidatingAdmissionPolicy for the approved registry and memory limits.
 - Seven attacks (privileged pod, root pod, cross-team Secret, cross-team database, memory exhaustion, unapproved image, no limits), a runner that prints one verdict per attack, a baseline stage in which all of them succeed, and a mode that switches each control off in turn.
 - A threat model whose table is checked against the attacks folder, a layered package with the dependency rule enforced by import-linter, unit, policy, integration and cluster tests, ruff, mypy, hadolint, yamllint, shellcheck, kubeconform, a hash-pinned lock file and a CI workflow.
+- `tech/`: one note per technology (34 files) explaining every file of the repository from first principles, with an index and a ten-minute reading list.
+- Cluster creation waits for a machine-wide lock so only one cluster is created at a time on a shared machine.

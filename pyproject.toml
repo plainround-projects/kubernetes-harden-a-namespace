@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "kubernetes-harden-a-namespace"
 version = "0.1.0"
-description = "Two team namespaces on a local Calico cluster, hardened with RBAC, Pod Security, NetworkPolicy, quotas and a CEL admission policy, each control proved by an attack that must fail."
+description = "Two team namespaces on a local k3s cluster, hardened with RBAC, Pod Security, NetworkPolicy, quotas and a CEL admission policy, each control proved by an attack that must fail."
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }

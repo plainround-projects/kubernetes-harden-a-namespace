@@ -24,7 +24,7 @@ Two team namespaces on a local k3d cluster whose network layer enforces NetworkP
 | Postgres | `postgres:17-alpine` | each team's database |
 | Python packages | Flask, gunicorn, psycopg 3 and its pool at run time; pytest, ruff, mypy, import-linter, yamllint, shellcheck-py, pip-audit for development, all pinned with hashes in `requirements.lock` and `requirements-dev.lock`; `make` installs them into `.venv/` | the service and the checks |
 
-No cloud account and no secrets: each team's database password is generated inside the cluster the first time you run `make up`. The cluster has its own kubeconfig (`.kube/config`, ignored by git); this project never reads or changes `~/.kube/config`. Plan on about 2 GB of memory for the kind node, Calico and both teams.
+No cloud account and no secrets: each team's database password is generated inside the cluster the first time you run `make up`. The cluster has its own kubeconfig (`.kube/config`, ignored by git); this project never reads or changes `~/.kube/config`. Plan on about 2 GB of memory for the k3s node and both teams.
 
 ## Setup, run, test, stop
 
@@ -38,7 +38,7 @@ make db                  # runs sql/001 and sql/002 against team A's database (i
 make db-queries          # runs the statements the service runs (sql/003_queries.sql)
 make test                # unit tests with coverage, the manifest and threat-model policy checks (no cluster needed)
 make lint                # ruff, format check, mypy, import rules, yamllint, shellcheck, hadolint, kubeconform
-make smoke               # every Done when line on the cluster: baseline, hardened, then one control off at a time (about 25 minutes)
+make smoke               # every Done when line on the cluster: baseline, hardened, then one control off at a time (about 7 minutes on an idle laptop, longer when the machine is busy)
 make test-integration    # the Postgres adapter, the SQL scripts and the real gunicorn command against a Postgres container
 make audit               # known-vulnerability check of the locked dependencies
 make down                # deletes the cluster and its kubeconfig
@@ -50,7 +50,7 @@ make down                # deletes the cluster and its kubeconfig
 
 ## Done when: the lesson's checklist and the proof for each line
 
-Every line is also checked by an automated cluster test, [tests/e2e/test_done_when.py](tests/e2e/test_done_when.py), which `make smoke` runs; its output is the evidence quoted here.
+Every line is also checked by an automated cluster test, [tests/e2e/test_done_when.py](tests/e2e/test_done_when.py), which `make smoke` runs; its output is the evidence quoted here. Last full run (2026-11-02, k3d on a busy laptop): from a fresh clone, `make up`, `make run`, `make test` and `make lint` passed; `make smoke` passed with `12 passed in 403.75s`.
 
 | # | Done when (from the lesson) | Command | What proves it |
 | --- | --- | --- | --- |
@@ -147,6 +147,7 @@ tests/
   integration/       the Postgres adapter, the SQL scripts and the real gunicorn command against a Postgres container.
   e2e/               baseline, hardened and one-control-off runs on the k3d cluster.
 docs/                threat-model.md and the decision records in docs/adr/.
+tech/                one note per technology, from first principles, with every file of this repository walked through (start at tech/README.md).
 Dockerfile           multi-stage, non-root, base image pinned by digest.
 Makefile             the only commands a reader needs (make help).
 ```

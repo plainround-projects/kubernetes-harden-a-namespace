@@ -1,4 +1,4 @@
-"""The lesson's Done when lines against the one-node Calico cluster (make up first).
+"""The lesson's Done when lines against the one-node k3s cluster (make up first).
 
 The cluster is put into a stage with scripts/stage.sh and the attacks are run with scripts/run-attacks.sh,
 exactly as a reader would. Besides "every attack is blocked when every control is on", the tests show the other
