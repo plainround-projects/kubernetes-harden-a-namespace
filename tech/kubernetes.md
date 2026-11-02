@@ -7,7 +7,7 @@ Kubernetes is a system that runs containers (see `docker.md`) across one or more
 Words used throughout:
 
 - **Cluster**: the whole Kubernetes system. **Node**: one computer (here one container pretending to be a computer) in it. The **control plane** is the part that stores the desired state and makes decisions; the **API server** is its front door, the thing `kubectl` talks to.
-- **Object**: one stored description, written in YAML (`yaml.md`): a Deployment, a Service, a ConfigMap and so on. Every object has `apiVersion`, `kind`, `metadata` (name, labels) and usually a `spec` (what you want).
+- **Object**: one stored description, written in YAML (`yaml.md`): a Deployment, a Service, a ConfigMap, a Secret or a ServiceAccount. Every object has `apiVersion`, `kind`, `metadata` (name, labels) and usually a `spec` (what you want).
 - **Pod**: the smallest thing that runs: one or more containers that share a network address. **Namespace**: a named folder that groups objects; this project uses `team-a` and `team-b`.
 - **Label**: a key and value stuck on an object (`app: web`). A **selector** finds objects by their labels.
 - **Deployment**: keeps N identical pods running and replaces them safely when you change the template. **Service**: a stable name and address that spreads traffic over the pods matching a selector. **ConfigMap** and **Secret**: key/value data given to pods (Secrets are for sensitive values). **ServiceAccount**: the identity a pod uses when it talks to the API server. **PodDisruptionBudget**: a promise about how many pods may be down during a voluntary disruption such as a node drain.

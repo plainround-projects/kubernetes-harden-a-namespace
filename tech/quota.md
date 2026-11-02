@@ -139,7 +139,7 @@ The container disallows privilege escalation and drops all capabilities (so Pod 
 kubectl -n team-a describe resourcequota team-quota
 ```
 
-Shows each line with `Used` and `Hard` columns (pods 3 of 20, requests.memory used of 4Gi, and so on).
+Shows each line with `Used` and `Hard` columns (pods 3 of 20, `requests.cpu` and `requests.memory` against their ceilings, and the counts of Deployments and Secrets).
 
 ```bash
 kubectl -n team-a describe limitrange team-defaults
