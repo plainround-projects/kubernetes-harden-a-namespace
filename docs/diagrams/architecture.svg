@@ -1,0 +1,133 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="850" viewBox="0 0 1200 850" role="img" aria-labelledby="t d">
+<title id="t">Architecture of the hardened shared namespaces</title>
+<desc id="d">A Team A engineer, acting as alice, calls the API server, where RBAC, Pod Security, ResourceQuota with LimitRange, and a CEL policy decide what is admitted. The policy refuses an image from the unapproved registry untrusted.example.test. In the namespace team-a the web pod may reach its own database on 5432. Two amber paths show what NetworkPolicy and RBAC stop: the web pod cannot reach the Team B database or read the Team B Secret in the namespace team-b. Two notes give the attack 4 result and the three runs.</desc>
+<style>
+:root{--paper:#ffffff;--ink:#10243d;--mute:#52677f;--accent:#0a6aa8;--good:#19743f;--warn:#8a5a00}
+text{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace;fill:var(--ink)}
+.title{font-family:Georgia,'Iowan Old Style','Times New Roman',serif;font-size:36px}
+.caption{font-size:16px;fill:var(--mute)}
+.name{font-size:20px;font-weight:600}
+.lane{font-size:17px;font-weight:600}
+.sub{font-size:15px;fill:var(--mute)}
+.label{font-size:15px}
+.tag{font-size:15px;fill:var(--mute)}
+.num{font-size:15px;font-weight:700;fill:var(--paper)}
+.legend{font-size:14px;fill:var(--mute)}
+.t-accent{fill:var(--accent)}
+.t-good{fill:var(--good)}
+.t-warn{fill:var(--warn)}
+.t-ink{fill:var(--ink)}
+.b{font-weight:600}
+.paper{fill:var(--paper);stroke:var(--mute);stroke-opacity:.3}
+.grid{fill:url(#grid)}
+.boundary{fill:var(--mute);fill-opacity:.035;stroke:var(--mute);stroke-opacity:.7;stroke-dasharray:6 5}
+.svc{fill:var(--accent);fill-opacity:.08;stroke:var(--accent);stroke-width:1.25}
+.store{fill:var(--mute);fill-opacity:.1;stroke:var(--mute);stroke-width:1.25}
+.rim{fill:none;stroke:var(--mute);stroke-width:1.25}
+.actor{fill:none;stroke:var(--mute);stroke-width:1.25}
+.slot{fill:var(--accent);fill-opacity:.14;stroke:var(--accent);stroke-width:1}
+.note{fill:var(--warn);fill-opacity:.09;stroke:var(--warn);stroke-width:1}
+.win{fill:var(--good);fill-opacity:.09;stroke:var(--good);stroke-width:1}
+.hair{fill:none;stroke:var(--mute);stroke-opacity:.4;stroke-width:1}
+.zone{fill:var(--accent);fill-opacity:.045;stroke:var(--accent);stroke-width:1.25;stroke-dasharray:6 5}
+.stop{fill:none;stroke:var(--warn);stroke-width:4;stroke-linecap:round}
+.mask{fill:var(--paper)}
+.sync,.async,.read,.fail,.ok{fill:none}
+.sync{stroke:var(--accent);stroke-width:1.75;marker-end:url(#a-sync)}
+.async{stroke:var(--accent);stroke-width:1.75;stroke-dasharray:8 6;marker-end:url(#a-async)}
+.read{stroke:var(--mute);stroke-width:1.75;stroke-linecap:round;stroke-dasharray:1 6;marker-end:url(#a-read)}
+.fail{stroke:var(--warn);stroke-width:2;marker-end:url(#a-fail)}
+.ok{stroke:var(--good);stroke-width:1.75;marker-end:url(#a-ok)}
+.dot{fill:var(--accent)}
+.dot-w{fill:var(--warn)}
+.dot-g{fill:var(--good)}
+.head-sync,.head-async{stroke:var(--accent)}
+.head-sync{fill:var(--accent)}
+.head-async,.head-read{fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.head-read{stroke:var(--mute)}
+.head-fail{fill:var(--warn)}
+.head-ok{fill:var(--good)}
+.gridline{fill:none;stroke:var(--mute);stroke-opacity:.09}
+</style>
+<defs>
+<pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path class="gridline" d="M40 0H0V40"/></pattern>
+<marker id="a-sync" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path class="head-sync" d="M0 0L10 5L0 10z"/></marker>
+<marker id="a-async" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path class="head-async" d="M1 1L9 5L1 9"/></marker>
+<marker id="a-read" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path class="head-read" d="M1 1L9 5L1 9"/></marker>
+<marker id="a-fail" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path class="head-fail" d="M0 0L10 5L0 10z"/></marker>
+<marker id="a-ok" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path class="head-ok" d="M0 0L10 5L0 10z"/></marker>
+</defs>
+<rect class="paper" x="0.5" y="0.5" width="1199" height="849" rx="16"/>
+<rect class="grid" x="1" y="1" width="1198" height="848" rx="16"/>
+<text class="title" x="48" y="68">Five attacks, five controls</text>
+<text class="caption" x="48" y="100">The web pod is the foothold. Amber: the paths the controls refuse, and the three runs of the attacks.</text>
+<rect class="actor" x="48" y="196" width="216" height="72" rx="36"/>
+<text class="name" x="156" y="228" text-anchor="middle">Team A engineer</text>
+<text class="sub" x="156" y="250" text-anchor="middle">kubectl --as=alice</text>
+<rect class="boundary" x="328" y="132" width="824" height="164" rx="14"/>
+<text class="tag" x="344" y="160">API server: admission</text>
+<rect class="svc" x="344" y="180" width="176" height="96" rx="12"/>
+<text class="name" x="360" y="212">RBAC</text>
+<text class="sub" x="360" y="236">developers' Role</text>
+<text class="sub" x="360" y="258">no token on pods</text>
+<rect class="svc" x="532" y="180" width="184" height="96" rx="12"/>
+<text class="name" x="548" y="212">Pod Security</text>
+<text class="sub" x="548" y="236">restricted</text>
+<text class="sub" x="548" y="258">enforce, warn</text>
+<rect class="svc" x="728" y="180" width="196" height="96" rx="12"/>
+<text class="name" x="744" y="212">ResourceQuota</text>
+<text class="sub" x="744" y="236">and LimitRange</text>
+<text class="sub" x="744" y="258">4 GiB of requests</text>
+<rect class="svc" x="936" y="180" width="196" height="96" rx="12"/>
+<text class="name" x="952" y="212">Policy in CEL</text>
+<text class="sub" x="952" y="236">approved registry</text>
+<text class="sub" x="952" y="258">memory limit set</text>
+<rect class="actor" x="888" y="340" width="264" height="72" rx="36"/>
+<text class="name" x="1020" y="372" text-anchor="middle">Unapproved registry</text>
+<text class="sub" x="1020" y="394" text-anchor="middle">untrusted.example.test</text>
+<rect class="boundary" x="48" y="340" width="544" height="180" rx="14"/>
+<text class="tag" x="64" y="368">Namespace team-a</text>
+<rect class="svc" x="72" y="396" width="208" height="84" rx="12"/>
+<text class="name" x="88" y="428">Team A web pod</text>
+<text class="sub" x="88" y="452">src/tenant_web</text>
+<path class="store" d="M352 408a108 12 0 0 1 216 0v76a108 12 0 0 1 -216 0z"/>
+<path class="rim" d="M352 408a108 12 0 0 0 216 0"/>
+<text class="name" x="460" y="440" text-anchor="middle">Team A database</text>
+<text class="sub" x="460" y="462" text-anchor="middle">Postgres, port 5432</text>
+<rect class="boundary" x="48" y="600" width="544" height="180" rx="14"/>
+<text class="tag" x="196" y="628">Namespace team-b</text>
+<path class="store" d="M76 668a100 12 0 0 1 200 0v76a100 12 0 0 1 -200 0z"/>
+<path class="rim" d="M76 668a100 12 0 0 0 200 0"/>
+<text class="name" x="176" y="700" text-anchor="middle">Team B Secret</text>
+<text class="sub" x="176" y="722" text-anchor="middle">db-credentials</text>
+<path class="store" d="M344 668a108 12 0 0 1 216 0v76a108 12 0 0 1 -216 0z"/>
+<path class="rim" d="M344 668a108 12 0 0 0 216 0"/>
+<text class="name" x="452" y="700" text-anchor="middle">Team B database</text>
+<text class="sub" x="452" y="722" text-anchor="middle">port 5432</text>
+<rect class="note" x="664" y="456" width="488" height="124" rx="10"/>
+<text class="label b t-warn" x="680" y="486">attack 4: 50 pods of 1 GiB</text>
+<text class="sub" x="680" y="512">baseline: all fifty pods run</text>
+<text class="sub" x="680" y="534">hardened: held by team-quota,</text>
+<text class="sub" x="680" y="556">requests.memory limit 4Gi</text>
+<rect class="note" x="664" y="616" width="488" height="124" rx="10"/>
+<text class="label b t-warn" x="680" y="646">five attacks, five controls</text>
+<text class="sub" x="680" y="672">baseline: every attack succeeds</text>
+<text class="sub" x="680" y="694">hardened: every attack is blocked</text>
+<text class="sub" x="680" y="716">one control off: only its attacks pass</text>
+<path class="sync" d="M264 232H344"/>
+<path class="sync" d="M432 276V340"/>
+<text class="label t-accent" x="444" y="322">admitted objects</text>
+<path class="sync" d="M280 438H352"/>
+<text class="label t-accent" x="290" y="428">5432</text>
+<path class="fail" d="M1034 276V340"/>
+<path class="stop" d="M1022 308H1046"/>
+<text class="label t-warn" x="1016" y="334" text-anchor="end">image not on the list</text>
+<path class="fail" d="M176 480V656"/>
+<path class="stop" d="M164 626H188"/>
+<text class="label t-warn" x="188" y="590">RBAC 403, no token</text>
+<path class="fail" d="M252 480V548Q252 560 264 560H440Q452 560 452 572V656"/>
+<path class="stop" d="M440 626H464"/>
+<text class="label t-warn" x="276" y="550">NetworkPolicy drops</text>
+<path class="sync" d="M48 806H112"/><text class="legend" x="124" y="811">sync call</text>
+<path class="fail" d="M696 806H760"/><text class="legend" x="772" y="811">failure path</text>
+</svg>

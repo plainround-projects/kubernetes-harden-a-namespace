@@ -9,6 +9,24 @@ Two team namespaces on a local k3d cluster whose network layer enforces NetworkP
 | **Level** | Advanced |
 | **Architecture** | [ARCHITECTURE.md](ARCHITECTURE.md), the one-page [threat model](docs/threat-model.md), decisions in [docs/adr](docs/adr) |
 
+## Architecture
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/diagrams/architecture-dark.svg">
+  <img alt="A Team A engineer acting as alice calls the API server, where RBAC, Pod Security, ResourceQuota with LimitRange and a CEL policy decide what is admitted, the policy refuses an unapproved registry, the web pod in team-a reaches only its own database, and NetworkPolicy and RBAC stop it reaching the Team B database and Secret." src="docs/diagrams/architecture.svg">
+</picture>
+
+The web pod is the foothold for the attacks, and each amber path is one that a control refuses; the notes give the memory attack result and the three runs.
+
+## How one run flows
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/diagrams/flow-dark.svg">
+  <img alt="One attack, memory exhaustion: alice applies a Deployment of fifty pods, the controllers create pods, each pod adds its requests to the quota, and in the amber rows the quota refuses the pod that would pass 4 GiB and the ReplicaSet records FailedCreate." src="docs/diagrams/flow.svg">
+</picture>
+
+The runner ends by counting fewer than fifty pods and reading the quota event, which is the verdict BLOCKED.
+
 ## Prerequisites
 
 | Tool | Version | Used for |

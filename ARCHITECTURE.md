@@ -27,6 +27,8 @@ The controls follow the same idea at the cluster level: a control is a Kustomize
 
 ## Data flow
 
+Drawn versions of this figure and of the walk-through: [the architecture](docs/diagrams/architecture.svg) and [one run](docs/diagrams/flow.svg).
+
 ```mermaid
 flowchart LR
     dev["Team A engineer<br/>kubectl --as=alice<br/>--as-group=team-a-humans"]
