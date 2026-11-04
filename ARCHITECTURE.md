@@ -35,9 +35,10 @@ flowchart LR
     reg["Unapproved registry<br/>untrusted.example.test"]
     subgraph api["API server: admission, in this order"]
         authz["RBAC"]
+        lr["LimitRanger<br/>default requests"]
         psa["Pod Security<br/>restricted"]
-        quota["ResourceQuota<br/>LimitRange"]
         vap["ValidatingAdmissionPolicy<br/>(CEL)"]
+        quota["ResourceQuota<br/>runs last"]
     end
     subgraph ta["Namespace team-a"]
         weba["Team A web pod"]
@@ -47,7 +48,7 @@ flowchart LR
         secb["Team B Secret<br/>db-credentials"]
         dbb[("Team B database<br/>port 5432")]
     end
-    dev --> authz --> psa --> quota --> vap
+    dev --> authz --> lr --> psa --> vap --> quota
     vap -. "image not on the list" .-x reg
     weba -- "allowed: web to its own db" --> dba
     weba -. "NetworkPolicy drops" .-x dbb
@@ -58,7 +59,7 @@ flowchart LR
 
 1. The runner applies the Deployment as `alice`. The API server authenticates the impersonated identity and RBAC allows `create deployments` in `team-a` (the Role grants it).
 2. Admission checks the Deployment object itself. It is valid and breaks no rule, so it is stored with `replicas: 50`.
-3. The Deployment controller creates a ReplicaSet and the ReplicaSet controller starts creating pods. Each pod create goes through admission again: Pod Security passes (the pod is `restricted`-compliant), the LimitRanger finds requests set, the ResourceQuota adds the pod's requests to the namespace's usage, and the policy passes (approved image, memory limit set).
+3. The Deployment controller creates a ReplicaSet and the ReplicaSet controller starts creating pods. Each pod create goes through admission again: the LimitRanger finds requests set, Pod Security passes (the pod is `restricted`-compliant), the policy passes (approved image, memory limit set), and the ResourceQuota, which runs last, adds the pod's requests to the namespace's usage.
 4. At the fourth or so pod the quota's `requests.memory` of 4 GiB would be exceeded. Admission refuses the pod with `exceeded quota: team-quota, requested: requests.memory=1Gi, used: ..., limited: requests.memory=4Gi`, and the ReplicaSet records a `FailedCreate` event with that message.
 5. The runner waits fifteen seconds, counts the pods that exist (well under 50) and reads the `FailedCreate` event. Fewer than fifty pods and a quota message in the events is `BLOCKED (ResourceQuota: held at N/50)`.
 6. The runner deletes the Deployment and waits for its pods to go.
@@ -67,7 +68,7 @@ The same steps in the baseline create all fifty pods, which is `SUCCEEDED`.
 
 ## Decisions and trade-offs
 
-**Every attack breaks exactly one rule.** Admission plugins run in a fixed order (Pod Security, then the LimitRanger and quota, then validating policies). A pod that broke two rules would be refused by the first one to look, and the test would credit the wrong control. So attack 1's pod is otherwise approved and limited; attack 4's pods are otherwise `restricted`-compliant; attack 5's pod is compliant; and so on. [ADR 0001](docs/adr/0001-controls-are-kustomize-components-and-each-has-one-attack.md).
+**Every attack breaks exactly one rule.** Admission plugins run in a fixed order (the LimitRanger, then Pod Security, then validating policies, then the ResourceQuota last). A pod that broke two rules would be refused by the first one to look, and the test would credit the wrong control. So attack 1's pod is otherwise approved and limited; attack 4's pods are otherwise `restricted`-compliant; attack 5's pod is compliant; and so on. [ADR 0001](docs/adr/0001-controls-are-kustomize-components-and-each-has-one-attack.md).
 
 **Three runs of the same attacks.** Baseline (every attack succeeds), hardened (every attack is blocked) and one control off (exactly that control's attacks succeed). An attack that is blocked in the hardened stage proves nothing alone; it may be malformed, or stopped by a different layer. The cluster test asserts all three.
 
@@ -77,7 +78,7 @@ The same steps in the baseline create all fifty pods, which is `SUCCEEDED`.
 
 **NetworkPolicy: deny both directions, then allow narrowly.** Default deny covers ingress and egress for every pod, because egress left open lets the web pod start a connection to the other team's database. DNS is allowed to the `kube-dns` pods only, on port 53, since without it no name resolves and the namespace looks broken instead of isolated. The one application flow is written at both ends (web egress to db, db ingress from web) with pod selectors and no namespace selector, so it can only mean this namespace. The kubelet's health probes come from the node and are not affected.
 
-**Quota: requests, not limits.** A quota on `limits.memory` makes the quota step refuse a pod with no limits, with a quota message, before the admission policy can refuse it with its own. The quota therefore caps `requests.cpu`, `requests.memory`, `pods`, Deployments and Secrets. The LimitRange supplies default **requests** and no default limit, for the same reason: a default limit would make the policy's limits rule unreachable.
+**Quota: requests, not limits.** The quota caps `requests.cpu`, `requests.memory`, `pods`, Deployments and Secrets. A quota on `limits.memory` would also demand limits on every pod, but the ResourceQuota runs after the policy, so a pod with no limits is still refused by the policy first and the quota would only add a second counter. The LimitRange supplies default **requests** and no default limit: a default limit would make the policy's limits rule unreachable.
 
 **The admission policy is CEL, not a webhook.** It runs inside the API server, fails closed, and needs no deployment or certificates. [ADR 0002](docs/adr/0002-admission-policy-in-cel-not-a-webhook.md). It requires a memory limit, not a CPU limit: a memory limit is what stops a container from taking its node's memory.
 
@@ -98,7 +99,7 @@ The same steps in the baseline create all fifty pods, which is `SUCCEEDED`.
 | No DNS rule | The web pod cannot resolve `db`; readiness fails; attack 3 prints INCONCLUSIVE. | Delete `allow-dns.yaml` from the network-policy component |
 | A cluster-wide role binding | Attack 2 succeeds. | `make baseline` (or `make prove-controls`, the `rbac` step) |
 | A pod that breaks two rules | The wrong control gets the credit. | Add `privileged: true` to `attacks/05-unapproved-image.yaml`: Pod Security refuses it before the policy sees it |
-| A quota on limits | The no-limits pod is refused by the quota, not by the policy. | Add `limits.memory` to `resourcequota.yaml` and run attack 6 |
+| A quota on limits | Every pod is also counted against the limits quota; the no-limits pod is still refused by the policy, because the ResourceQuota runs after it. | Add `limits.memory` to `resourcequota.yaml` and run attack 6 |
 | A bad Deployment | The Deployment is accepted; only its ReplicaSet fails (quota or policy), so the error is in events, not at apply. | `kubectl -n team-a get events` after attack 4 |
 
 ## Limits of the teaching build against production
